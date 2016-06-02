@@ -44,8 +44,11 @@ func (b *SimpleRingBuff) GetByte() byte {
 }
 
 /* Return Slice of all available bytes */
-func (b *SimpleRingBuff) GetBytes() []byte {
-    cnt := b.AvailByteCnt()
+func (b *SimpleRingBuff) GetBytes(cnt int) []byte {
+    n := b.AvailByteCnt()
+	if(cnt == 0 || cnt > n) {
+		cnt = n
+	} 
 	if(b.rIdx + cnt < b.size) { // best case scenario, most efficient
 		data := b.d[b.rIdx:b.rIdx+cnt]
 		b.rIdx += cnt
@@ -56,6 +59,24 @@ func (b *SimpleRingBuff) GetBytes() []byte {
 		cnt -= (b.size - b.rIdx)
 		copy(data[(b.size-b.rIdx):], b.d[0:cnt])
 		b.rIdx = cnt
+		return data
+	}
+}
+
+/* Return Slice of all available bytes without incrementing pointers */
+func (b *SimpleRingBuff) PeekBytes(cnt int) []byte {
+	n := b.AvailByteCnt()
+	if(cnt == 0 || cnt > n) {
+		cnt = n
+	} 
+	if(b.rIdx + cnt < b.size) { // best case scenario, most efficient
+		data := b.d[b.rIdx:b.rIdx+cnt]
+		return data
+	} else { // data wraps, we need to copy to a new buffer
+		data := make([]byte, cnt)
+		copy(data, b.d[b.rIdx:b.size])
+		cnt -= (b.size - b.rIdx)
+		copy(data[(b.size-b.rIdx):], b.d[0:cnt])
 		return data
 	}
 }
